@@ -23,7 +23,11 @@
  *    console.log(r.getArea());   // => 200
  */
 function Rectangle(width, height) {
-    throw new Error('Not implemented');
+    this.width = width;
+    this.height = height;
+}
+Rectangle.prototype.getArea = function() {
+    return this.width * this.height;
 }
 
 
@@ -38,7 +42,7 @@ function Rectangle(width, height) {
  *    { width: 10, height : 20 } => '{"height":10,"width":20}'
  */
 function getJSON(obj) {
-    throw new Error('Not implemented');
+    return JSON.stringify(obj);
 }
 
 
@@ -54,7 +58,8 @@ function getJSON(obj) {
  *
  */
 function fromJSON(proto, json) {
-    throw new Error('Not implemented');
+    let obj = Object.create(proto);
+    return Object.assign(obj, JSON.parse(json));
 }
 
 
@@ -106,34 +111,142 @@ function fromJSON(proto, json) {
  *  For more examples see unit tests.
  */
 
+class CSSSelector {
+    constructor(value, type, remainder = '') {
+        this.value = remainder;
+
+        switch (type[0]) {
+            case 'element': {
+                this.value += value;
+                break;
+            }
+            case 'id': {
+                this.value += `#${value}`;
+                break;
+            }
+            case 'class': {
+                this.value += `.${value}`;
+                break;
+            }
+            case 'attr': {
+                this.value += `[${value}]`;
+                break;
+            }
+            case 'pseudoClass': {
+                this.value += `:${value}`;
+                break;
+            }
+            case 'pseudoElement': {
+                this.value += `::${value}`;
+                break;
+            }
+        }   
+        this.type = type;
+        this.checkUniqueness();
+        this.checkOrder();
+    }
+
+    stringify() {
+        return this.value;
+    }
+    
+    get id() {
+        return (value) => {
+           return new CSSSelector(value, ['id', ...this.type], this.value);
+        };
+    }
+    
+    get class() {
+        return (value) => {
+           return new CSSSelector(value, ['class', ...this.type], this.value);
+        };
+    }
+    
+    get attr() {
+        return (value) => {
+           return new CSSSelector(value, ['attr', ...this.type], this.value);
+        };
+    }
+
+    get element() {
+        return (value) => {
+            return new CSSSelector(value, ['element', ...this.type], this.value);
+         };
+    }
+
+    get pseudoClass() {
+        return (value) => {
+            return new CSSSelector(value, ['pseudoClass', ...this.type], this.value);
+         };
+    }
+
+    get pseudoElement() {
+        return (value) => {
+            return new CSSSelector(value, ['pseudoElement', ...this.type], this.value);
+         };
+    }
+
+    checkUniqueness() {
+        const error = 'Element, id and pseudo-element should not occur more then one time inside the selector';
+
+        if (this.type.filter(x => x === 'element').length > 1) {
+            throw new Error(error);
+        }
+        if (this.type.filter(x => x === 'id').length > 1) {
+            throw new Error(error);
+        }
+        if (this.type.filter(x => x === 'pseudoElement').length > 1) {
+            throw new Error(error);
+        }
+    }
+
+    checkOrder() {
+        const error = 'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element';
+        const order = ['element', 'id', 'class', 'attr', 'pseudoClass', 'pseudoElement'];
+        let currentType = this.type[0];
+        let highestIndex = 0;
+        for (let type of this.type.slice(1)) {
+           if (order.indexOf(type) > highestIndex) highestIndex = order.indexOf(type);
+        }
+        if (order.indexOf(currentType) < highestIndex) {
+            throw new Error(error);
+        }
+    }
+
+    static combine (selector1, combinator, selector2) {
+        let value = `${selector1.stringify()} ${combinator} ${selector2.stringify()}`;
+        return new CSSSelector('' , ['element'], value);
+    }
+}
+
 const cssSelectorBuilder = {
 
     element: function(value) {
-        throw new Error('Not implemented');
+        return new CSSSelector(value, ['element']);
     },
 
     id: function(value) {
-        throw new Error('Not implemented');
+        return new CSSSelector(value, ['id']);
     },
 
     class: function(value) {
-        throw new Error('Not implemented');
+        return new CSSSelector(value, ['class']);
     },
 
     attr: function(value) {
-        throw new Error('Not implemented');
+        return new CSSSelector(value, ['attr']);
     },
 
     pseudoClass: function(value) {
-        throw new Error('Not implemented');
+        return new CSSSelector(value, ['pseudoClass']);
     },
 
     pseudoElement: function(value) {
-        throw new Error('Not implemented');
+        return new CSSSelector(value, ['pseudoElement']);
     },
 
     combine: function(selector1, combinator, selector2) {
-        throw new Error('Not implemented');
+        return CSSSelector.combine(selector1, combinator, selector2);
     },
 };
 
